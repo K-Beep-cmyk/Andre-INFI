@@ -3,11 +3,10 @@ package Sqlite;
 import java.sql.*;
 import java.util.Scanner;
 
-public class BestellungsBeispiel {
-	bestellungsBeispiel.java
+public class ForeingKey {
     private String dbName;
 
-    public BestellungsBeispiel(String dbName) {
+    public ForeingKey(String dbName) {
         this.dbName = dbName;
     }
 
@@ -154,7 +153,7 @@ public class BestellungsBeispiel {
     public static void main(String[] args) {
         Scanner sc = new Scanner(System.in);
         
-        BestellungsBeispiel shop = new BestellungsBeispiel("shop.db");
+        ForeingKey shop = new ForeingKey("shop.db");
         
         shop.createTables();
 
