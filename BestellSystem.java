@@ -5,6 +5,9 @@ import java.util.Scanner;
 import java.io.FileWriter;
 import java.nio.file.Files;
 import java.nio.file.Paths;
+import java.io.FileInputStream;
+import java.util.Properties;
+
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -12,28 +15,32 @@ import org.json.JSONObject;
 
 public class BestellSystem {
 
- 
-    private Connection connect() {
-        try {
-            String url = "jdbc:mysql://localhost:3306/shop";
-            String user = "root";
-            String password = "123456789";
+    // Verbinden mit der Datenbank 
+	private Connection connect() {
+	    try {
+	        Properties props = new Properties();
+	        props.load(new FileInputStream("C:\\Schule\\SWP\\INFI\\src\\db.properties"));
 
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            return DriverManager.getConnection(url, user, password);
+	        String url = props.getProperty("db.url");
+	        String user = props.getProperty("db.user");
+	        String password = props.getProperty("db.password");
 
-        } catch (Exception e) {
-            System.out.println("Fehler beim Verbinden: " + e.getMessage());
-            return null;
-        }
-    }
+	        Class.forName("com.mysql.cj.jdbc.Driver");
+	        return DriverManager.getConnection(url, user, password);
+	        
 
-    
+	    } catch (Exception e) {
+	        System.out.println("Fehler beim Verbinden: " + e.getMessage());
+	        return null;
+	    }
+	}
+
+    // erstellen von Tabellen
     public void createTables() {
         String kunden = "CREATE TABLE IF NOT EXISTS KUNDEN (" +
                 "ID INT AUTO_INCREMENT PRIMARY KEY, " +
                 "NAME VARCHAR(255), " +
-                "GEBURTSDATUM DATE)";
+                "GEBURTSDATUM DATE)";           // DATETIME Hausuebung
 
         String artikel = "CREATE TABLE IF NOT EXISTS ARTIKEL (" +
                 "ID INT AUTO_INCREMENT PRIMARY KEY, " +
@@ -44,11 +51,17 @@ public class BestellSystem {
                 "ID INT AUTO_INCREMENT PRIMARY KEY, " +
                 "KUNDEN_ID INT, " +
                 "ARTIKEL_ID INT, " +
-                "BESTELLZEITPUNKT DATETIME, " +
+                "BESTELLZEITPUNKT DATETIME, " +  // DATETIME Hausuebung 
                 "FOREIGN KEY (KUNDEN_ID) REFERENCES KUNDEN(ID), " +
                 "FOREIGN KEY (ARTIKEL_ID) REFERENCES ARTIKEL(ID))";
 
-        try (Connection conn = connect(); Statement stmt = conn.createStatement()) {
+        Connection conn = connect();
+        if (conn == null) {
+            System.out.println("Keine Verbindung zur DB möglich!");
+            return;
+        }
+ 
+        try (Statement stmt = conn.createStatement()) {
             stmt.execute(kunden);
             stmt.execute(artikel);
             stmt.execute(bestellungen);
@@ -57,7 +70,7 @@ public class BestellSystem {
         }
     }
 
-    
+    // Kunden hinzufügen
     public void addKunde(String name, String geburtsdatum) {
         try {
             Date date = Date.valueOf(geburtsdatum);
@@ -75,7 +88,7 @@ public class BestellSystem {
         }
     }
 
-    
+    // Artikel hinzufügen
     public void addArtikel(String bez, double preis) {
         String sql = "INSERT INTO ARTIKEL (BEZEICHNUNG, PREIS) VALUES (?, ?)";
         try (Connection conn = connect(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -88,7 +101,7 @@ public class BestellSystem {
         }
     }
 
-    
+    // und Bestellungen hinzufügen
     public void addBestellung(int kundenId, int artikelId) {
         String sql = "INSERT INTO BESTELLUNGEN (KUNDEN_ID, ARTIKEL_ID, BESTELLZEITPUNKT) VALUES (?, ?, ?)";
         try (Connection conn = connect(); PreparedStatement ps = conn.prepareStatement(sql)) {
@@ -102,7 +115,7 @@ public class BestellSystem {
         }
     }
 
-    
+    // JSON Hausuebung (Der Import) 
     public void importKundenFromJSON(String datei) {
         try {
             String content = new String(Files.readAllBytes(Paths.get(datei)));
@@ -119,7 +132,7 @@ public class BestellSystem {
         }
     }
 
-    
+ // JSON Hausuebung (Der Export) 
     public void exportKundenToJSON(String datei) {
         JSONArray array = new JSONArray();
         String sql = "SELECT * FROM KUNDEN";
@@ -143,7 +156,7 @@ public class BestellSystem {
         }
     }
 
-    
+    // Main hier wird 1. das Menue angezeigt, um die Funktionen auswählen zu können
     public static void main(String[] args) {
         BestellSystem shop = new BestellSystem();
         shop.createTables();
@@ -202,6 +215,6 @@ public class BestellSystem {
                     System.out.println("Ungültige Eingabe. Bitte wählen Sie erneut.");
             }
         }
-        sc.close();
+        sc.close();  // wichtig schließen
     }
 }
