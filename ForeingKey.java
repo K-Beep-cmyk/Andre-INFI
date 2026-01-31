@@ -1,7 +1,10 @@
 package Sqlite;
 
+import java.io.FileInputStream;
 import java.sql.*;
+import java.util.Properties;
 import java.util.Scanner;
+
 
 public class ForeingKey {
     private String dbName;
@@ -11,18 +14,23 @@ public class ForeingKey {
     }
 
     private Connection connect() {
-        String url = "jdbc:mysql://localhost:3306/" + dbName;
-        String user = "root";
-        String password = "123456789";
+	    try {
+	        Properties props = new Properties();
+	        props.load(new FileInputStream("C:\\Schule\\SWP\\INFI\\src\\db.properties"));
 
-        try {
-            Class.forName("com.mysql.cj.jdbc.Driver");
-            return DriverManager.getConnection(url, user, password);
-        } catch (Exception e) {
-            System.out.println(e.getMessage());
-            return null;
-        }
-    }
+	        String url = props.getProperty("db.url");
+	        String user = props.getProperty("db.user");
+	        String password = props.getProperty("db.password");
+
+	        Class.forName("com.mysql.cj.jdbc.Driver");
+	        return DriverManager.getConnection(url, user, password);
+	        
+
+	    } catch (Exception e) {
+	        System.out.println("Fehler beim Verbinden: " + e.getMessage());
+	        return null;
+	    }
+	}
 
     public void createTables() {
         String sqlKunden = "CREATE TABLE IF NOT EXISTS KUNDEN (" +
