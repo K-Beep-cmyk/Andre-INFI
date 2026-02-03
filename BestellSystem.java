@@ -1,22 +1,19 @@
 package Sqlite;
 
-import java.sql.*;
-import java.util.Scanner;
-import java.io.FileWriter;
-import java.nio.file.Files;
-import java.nio.file.Paths;
 import java.io.FileInputStream;
+import java.sql.*;
 import java.util.Properties;
+import java.util.Scanner;
 
 
-import org.json.JSONArray;
-import org.json.JSONObject;
+public class ForeingKey {
+    private String dbName;
 
+    public ForeingKey(String dbName) {
+        this.dbName = dbName;
+    }
 
-public class BestellSystem {
-
-    // Verbinden mit der Datenbank 
-	private Connection connect() {
+    private Connection connect() {
 	    try {
 	        Properties props = new Properties();
 	        props.load(new FileInputStream("C:\\Schule\\SWP\\INFI\\src\\db.properties"));
@@ -35,149 +32,178 @@ public class BestellSystem {
 	    }
 	}
 
-    // erstellen von Tabellen
     public void createTables() {
-        String kunden = "CREATE TABLE IF NOT EXISTS KUNDEN (" +
-                "ID INT AUTO_INCREMENT PRIMARY KEY, " +
-                "NAME VARCHAR(255), " +
-                "GEBURTSDATUM DATE)";           // DATETIME Hausuebung
+        String sqlKunden = "CREATE TABLE IF NOT EXISTS KUNDEN (" +
+                           "ID INT PRIMARY KEY AUTO_INCREMENT, " +
+                           "NAME VARCHAR(255), " +
+                           "GEBURTSDATUM DATE);";
 
-        String artikel = "CREATE TABLE IF NOT EXISTS ARTIKEL (" +
-                "ID INT AUTO_INCREMENT PRIMARY KEY, " +
-                "BEZEICHNUNG VARCHAR(255), " +
-                "PREIS DECIMAL(10,2))";
+        String sqlArtikel = "CREATE TABLE IF NOT EXISTS ARTIKEL (" +
+                            "ID INT PRIMARY KEY AUTO_INCREMENT, " +
+                            "BEZEICHNUNG VARCHAR(255), " +
+                            "PREIS DOUBLE);";
 
-        String bestellungen = "CREATE TABLE IF NOT EXISTS BESTELLUNGEN (" +
-                "ID INT AUTO_INCREMENT PRIMARY KEY, " +
-                "KUNDEN_ID INT, " +
-                "ARTIKEL_ID INT, " +
-                "BESTELLZEITPUNKT DATETIME, " +  // DATETIME Hausuebung 
-                "FOREIGN KEY (KUNDEN_ID) REFERENCES KUNDEN(ID), " +
-                "FOREIGN KEY (ARTIKEL_ID) REFERENCES ARTIKEL(ID))";
+        String sqlBestellungen = "CREATE TABLE IF NOT EXISTS BESTELLUNGEN (" +
+                                 "ID INT PRIMARY KEY AUTO_INCREMENT, " +
+                                 "KUNDEN_ID INT, " +
+                                 "ARTIKEL_ID INT, " +
+                                 "BESTELLZEITPUNKT DATETIME, " +
+                                 "FOREIGN KEY(KUNDEN_ID) REFERENCES KUNDEN(ID), " +
+                                 "FOREIGN KEY(ARTIKEL_ID) REFERENCES ARTIKEL(ID));";
 
-        Connection conn = connect();
-        if (conn == null) {
-            System.out.println("Keine Verbindung zur DB möglich!");
-            return;
-        }
- 
-        try (Statement stmt = conn.createStatement()) {
-            stmt.execute(kunden);
-            stmt.execute(artikel);
-            stmt.execute(bestellungen);
-        } catch (SQLException e) {
-            System.out.println("Fehler beim Erstellen der Tabellen: " + e.getMessage());
-        }
-    }
-
-    // Kunden hinzufügen
-    public void addKunde(String name, String geburtsdatum) {
-        try {
-            Date date = Date.valueOf(geburtsdatum);
-            String sql = "INSERT INTO KUNDEN (NAME, GEBURTSDATUM) VALUES (?, ?)";
-
-            try (Connection conn = connect(); PreparedStatement ps = conn.prepareStatement(sql)) {
-                ps.setString(1, name);
-                ps.setDate(2, date);
-                ps.executeUpdate();
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement()) {
+            
+            if (conn != null) {
+                stmt.execute(sqlKunden);
+                stmt.execute(sqlArtikel);
+                stmt.execute(sqlBestellungen);
             }
-            System.out.println("Kunde '" + name + "' wurde erfolgreich angelegt.");
-
-        } catch (Exception e) {
-            System.out.println("Ungültiges Datumsformat! Bitte YYYY-MM-DD verwenden.");
-        }
-    }
-
-    // Artikel hinzufügen
-    public void addArtikel(String bez, double preis) {
-        String sql = "INSERT INTO ARTIKEL (BEZEICHNUNG, PREIS) VALUES (?, ?)";
-        try (Connection conn = connect(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setString(1, bez);
-            ps.setDouble(2, preis);
-            ps.executeUpdate();
-            System.out.println("Artikel '" + bez + "' erfolgreich angelegt.");
         } catch (SQLException e) {
-            System.out.println("Fehler beim Anlegen des Artikels: " + e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 
-    // und Bestellungen hinzufügen
+    public void addKunde(String name, String geburtsdatum) {
+        String sql = "INSERT INTO KUNDEN (NAME, GEBURTSDATUM) VALUES (?, ?)";
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            if (conn == null) return;
+            
+            pstmt.setString(1, name);
+            pstmt.setDate(2, Date.valueOf(geburtsdatum));
+            pstmt.executeUpdate();
+            System.out.println("Kunde angelegt.");
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
+    public void addArtikel(String bezeichnung, double preis) {
+        String sql = "INSERT INTO ARTIKEL (BEZEICHNUNG, PREIS) VALUES (?, ?)";
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            if (conn == null) return;
+
+            pstmt.setString(1, bezeichnung);
+            pstmt.setDouble(2, preis);
+            pstmt.executeUpdate();
+            System.out.println("Artikel angelegt.");
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+
     public void addBestellung(int kundenId, int artikelId) {
         String sql = "INSERT INTO BESTELLUNGEN (KUNDEN_ID, ARTIKEL_ID, BESTELLZEITPUNKT) VALUES (?, ?, ?)";
-        try (Connection conn = connect(); PreparedStatement ps = conn.prepareStatement(sql)) {
-            ps.setInt(1, kundenId);
-            ps.setInt(2, artikelId);
-            ps.setTimestamp(3, new Timestamp(System.currentTimeMillis()));
-            ps.executeUpdate();
-            System.out.println("Bestellung erfolgreich angelegt.");
+
+        try (Connection conn = connect();
+             PreparedStatement pstmt = conn.prepareStatement(sql)) {
+            if (conn == null) return;
+
+            pstmt.setInt(1, kundenId);
+            pstmt.setInt(2, artikelId);
+            long now = System.currentTimeMillis();
+            pstmt.setTimestamp(3, new Timestamp(now));
+            pstmt.executeUpdate();
+            System.out.println("Bestellung erfolgreich.");
         } catch (SQLException e) {
-            System.out.println("Fehler beim Anlegen der Bestellung: " + e.getMessage());
+            System.out.println(e.getMessage());
         }
     }
 
-    // JSON Hausuebung (Der Import) 
-    public void importKundenFromJSON(String datei) {
-        try {
-            String content = new String(Files.readAllBytes(Paths.get(datei)));
-            JSONArray arr = new JSONArray(content);
+    public void showAllBestellungen() {
+        String sql = "SELECT k.NAME, k.GEBURTSDATUM, a.BEZEICHNUNG, b.BESTELLZEITPUNKT " +
+                     "FROM BESTELLUNGEN b " +
+                     "JOIN KUNDEN k ON b.KUNDEN_ID = k.ID " +
+                     "JOIN ARTIKEL a ON b.ARTIKEL_ID = a.ID";
 
-            for (int i = 0; i < arr.length(); i++) {
-                JSONObject obj = arr.getJSONObject(i);
-                addKunde(obj.getString("name"), obj.getString("geburtsdatum"));
-            }
-            System.out.println("JSON-Import abgeschlossen.");
+        try (Connection conn = connect();
+             Statement stmt = conn.createStatement();
+             ResultSet rs = stmt.executeQuery(sql)) {
+            
+            if (conn == null) return;
 
-        } catch (Exception e) {
-            System.out.println("Fehler beim JSON-Import: " + e.getMessage());
-        }
-    }
-
- // JSON Hausuebung (Der Export) 
-    public void exportKundenToJSON(String datei) {
-        JSONArray array = new JSONArray();
-        String sql = "SELECT * FROM KUNDEN";
-
-        try (Connection conn = connect(); Statement stmt = conn.createStatement(); ResultSet rs = stmt.executeQuery(sql)) {
+            System.out.println("\n--- BESTELLÜBERSICHT ---");
             while (rs.next()) {
-                JSONObject o = new JSONObject();
-                o.put("id", rs.getInt("ID"));
-                o.put("name", rs.getString("NAME"));
-                o.put("geburtsdatum", rs.getDate("GEBURTSDATUM").toString());
-                array.put(o);
-            }
+                String kunde = rs.getString("NAME");
+                Date geb = rs.getDate("GEBURTSDATUM");
+                String artikel = rs.getString("BEZEICHNUNG");
+                Timestamp zeit = rs.getTimestamp("BESTELLZEITPUNKT");
 
-            try (FileWriter fw = new FileWriter(datei)) {
-                fw.write(array.toString(4)); 
+                System.out.println(zeit + " | " + kunde + " (" + geb + ") kaufte " + artikel);
             }
-            System.out.println("JSON-Export abgeschlossen: " + datei);
+            System.out.println("------------------------\n");
 
-        } catch (Exception e) {
-            System.out.println("Fehler beim JSON-Export: " + e.getMessage());
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
+        }
+    }
+    
+    public void joinTables() {
+    	String sql = "SELECT k.NAME, a.BEZEICHNUNG " +
+                     "FROM KUNDEN k " +
+    			     "LEFT JOIN BESTELLUNGEN b ON k.ID = b.KUNDEN_ID " +
+                     "LEFT JOIN ARTIKEL a ON b.ARTIKEL_ID = a.ID";
+    	
+    	try (Connection conn = connect(); 
+    	         ResultSet rs = conn.createStatement().executeQuery(sql)) {
+    	        
+    	        while (rs.next()) {
+    	            System.out.println(rs.getString(1) + "=" + rs.getString(2));
+    	        }
+    	        
+    	    } catch (SQLException e) {
+    	        System.out.println(e.getMessage());
+    	  }
+    }
+
+    public void dropAllTables() {
+        try (Connection conn = connect(); Statement stmt = conn.createStatement()) {
+            if (conn == null) return;
+
+            stmt.execute("SET FOREIGN_KEY_CHECKS = 0;");
+            stmt.executeUpdate("DROP TABLE IF EXISTS BESTELLUNGEN");
+            stmt.executeUpdate("DROP TABLE IF EXISTS ARTIKEL");
+            stmt.executeUpdate("DROP TABLE IF EXISTS KUNDEN");
+            stmt.execute("SET FOREIGN_KEY_CHECKS = 1;");
+            
+            System.out.println("Datenbank wurde zurückgesetzt.");
+        } catch (SQLException e) {
+            System.out.println(e.getMessage());
         }
     }
 
-    // Main hier wird 1. das Menue angezeigt, um die Funktionen auswählen zu können
     public static void main(String[] args) {
-        BestellSystem shop = new BestellSystem();
+        Scanner sc = new Scanner(System.in);
+        
+        ForeingKey shop = new ForeingKey("shop.db");
+        
         shop.createTables();
 
-        Scanner sc = new Scanner(System.in);
-        boolean run = true;
+        boolean running = true;
 
-        while (run) {
-            System.out.println("\n===== HAUPTMENÜ =====");
+        while (running) {
+            System.out.println("HAUPTMENÜ");
             System.out.println("1) Kunde anlegen");
             System.out.println("2) Artikel anlegen");
             System.out.println("3) Bestellung aufgeben");
-            System.out.println("4) Kunden aus JSON importieren");
-            System.out.println("5) Kunden als JSON exportieren");
+            System.out.println("4) Alle Bestellungen anzeigen");
+            System.out.println("5) Datenbank zurücksetzen");
+            System.out.println("6) Joins");
             System.out.println("0) Beenden");
             System.out.print("Ihre Wahl: ");
 
-            int w = sc.nextInt();
-            sc.nextLine(); 
+            String wahlStr = sc.nextLine();
+            int wahl = -1;
+            try {
+                wahl = Integer.parseInt(wahlStr);
+            } catch (NumberFormatException e) {
+            }
 
-            switch (w) {
+            switch (wahl) {
                 case 1:
                     System.out.print("Name: ");
                     String name = sc.nextLine();
@@ -186,35 +212,42 @@ public class BestellSystem {
                     shop.addKunde(name, geb);
                     break;
                 case 2:
-                    System.out.print("Bezeichnung: ");
-                    String b = sc.nextLine();
+                    System.out.print("Artikel: ");
+                    String bez = sc.nextLine();
                     System.out.print("Preis: ");
-                    double preis = sc.nextDouble();
-                    sc.nextLine();
-                    shop.addArtikel(b, preis);
+                    try {
+                        double preis = Double.parseDouble(sc.nextLine().replace(",", "."));
+                        shop.addArtikel(bez, preis);
+                    } catch (Exception e) { System.out.println("Ungültig"); }
                     break;
                 case 3:
-                    System.out.print("Kunden ID: ");
-                    int k = sc.nextInt();
-                    System.out.print("Artikel ID: ");
-                    int a = sc.nextInt();
-                    sc.nextLine();
-                    shop.addBestellung(k, a);
+                    try {
+                        System.out.print("Kunden ID: ");
+                        int kId = Integer.parseInt(sc.nextLine());
+                        System.out.print("Artikel ID: ");
+                        int aId = Integer.parseInt(sc.nextLine());
+                        shop.addBestellung(kId, aId);
+                    } catch (Exception e) { System.out.println("Ungültig"); }
                     break;
                 case 4:
-                    shop.importKundenFromJSON("kunden_import.json");
+                    shop.showAllBestellungen();
                     break;
                 case 5:
-                    shop.exportKundenToJSON("kunden_export.json");
+                    shop.dropAllTables();
+                    shop.createTables();
                     break;
+                case 6:
+                	shop.joinTables();
+                	break;
                 case 0:
-                    run = false;
-                    System.out.println("Programm beendet.");
+                    running = false;
+                    System.out.println("Ende.");
                     break;
                 default:
-                    System.out.println("Ungültige Eingabe. Bitte wählen Sie erneut.");
+                    System.out.println("Ungültig.");
             }
+            System.out.println();
         }
-        sc.close();  // wichtig schließen
+        sc.close();
     }
 }
