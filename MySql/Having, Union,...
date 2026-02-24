@@ -1,0 +1,216 @@
+package Sqlite;
+
+import java.sql.*;
+import java.time.LocalDate;
+import java.util.Scanner;
+
+public class Having {
+    static String url = "jdbc:mysql://localhost:3306/havinguebung";
+    static String user = "root";
+    static String pass = "123456789";
+
+   public static void main(String[] args) {
+       try (Connection conn = DriverManager.getConnection(url, user, pass)) {
+           setupDatabase(conn);
+           addBuecher(conn, "The Adventures of Tom Sawyer");
+           addBuecher(conn, "Harry Potter");
+           addBuecher(conn, "Java Programming");
+           addMitglieder(conn, "Tom");
+           addMitglieder(conn, "Anna");
+           addMitglieder(conn, "Max");
+           ausleihen(conn, 1, 1, LocalDate.now());
+           ausleihen(conn, 2, 1, LocalDate.now());
+           ausleihen(conn, 3, 1, LocalDate.now());
+           ausleihen(conn, 1, 2, LocalDate.now());
+           ausleihen(conn, 2, 3, LocalDate.now());
+           rueckgabe(conn, 1);
+
+           Scanner scanner = new Scanner(System.in);
+           boolean running = true;
+
+           while (running) {
+               System.out.println("\n=== Menü ===");
+               System.out.println("1 - GroupBy");
+               System.out.println("2 - Having");
+               System.out.println("3 - Union");
+               System.out.println("4 - With");
+               System.out.println("5 - Subquery");
+               System.out.println("0 - Beenden");
+               System.out.print("Auswahl: ");
+
+               int auswahl = scanner.nextInt();
+
+               switch (auswahl) {
+                   case 1 -> addGroupBy(conn);
+                   case 2 -> addHaving(conn, 1);
+                   case 3 -> addUnion(conn);
+                   case 4 -> addWith(conn);
+                   case 5 -> addSubquerry(conn);
+                   case 0 -> running = false;
+                   default -> System.out.println("Ungültige Eingabe!");
+               }
+           }
+           scanner.close();
+
+       } catch (SQLException e) {
+           e.printStackTrace();
+       }
+   }
+
+   public static void addBuecher(Connection conn, String titel) {
+       String sql = "INSERT INTO Buecher (titel) VALUES (?)";
+       try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+           stmt.setString(1, titel);
+           stmt.executeUpdate();
+       } catch (SQLException e) {
+           e.printStackTrace();
+       }
+   }
+
+   public static void addMitglieder(Connection conn, String name) {
+       String sql = "INSERT INTO Mitglieder (name) VALUES (?)";
+       try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+           stmt.setString(1, name);
+           stmt.executeUpdate();
+       } catch (SQLException e) {
+           e.printStackTrace();
+       }
+   }
+
+   public static void ausleihen(Connection conn, int buchId, int mitgliedId, LocalDate ausleihDatum) {
+       String sql = "INSERT INTO Ausleihe (buchId, mitgliedId, ausleihDatum) VALUES (?,?,?)";
+       try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+           stmt.setInt(1, buchId);
+           stmt.setInt(2, mitgliedId);
+           stmt.setDate(3, Date.valueOf(ausleihDatum));
+           stmt.executeUpdate();
+       } catch (SQLException e) {
+           e.printStackTrace();
+       }
+   }
+
+   public static void rueckgabe(Connection conn, int ausleihId) {
+       String sql = "UPDATE Ausleihe SET rueckgabeDatum = ? WHERE id = ?";
+       try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+           stmt.setDate(1, Date.valueOf(LocalDate.now()));
+           stmt.setInt(2, ausleihId);
+           stmt.executeUpdate();
+       } catch (SQLException e) {
+           e.printStackTrace();
+       }
+   }
+
+   public static void addGroupBy(Connection conn) {
+       String sql = "SELECT mitgliedId, COUNT(*) AS anzahl "
+                  + "FROM Ausleihe "
+                  + "GROUP BY mitgliedId "
+                  + "ORDER BY mitgliedId ASC";
+       try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+           ResultSet rs = stmt.executeQuery();
+           while (rs.next()) {
+               System.out.println("MitgliedId: " + rs.getInt("mitgliedId")
+                                + ", Anzahl: " + rs.getInt("anzahl"));
+           }
+       } catch (SQLException e) {
+           e.printStackTrace();
+       }
+   }
+
+   public static void addHaving(Connection conn, int ausleihId) {
+       String sql = "SELECT mitgliedId, COUNT(*) AS anzahl "
+                  + "FROM Ausleihe "
+                  + "WHERE mitgliedId = ? "
+                  + "GROUP BY mitgliedId "
+                  + "HAVING COUNT(*) > 1 "
+                  + "ORDER BY mitgliedId ASC";
+       try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+           stmt.setInt(1, ausleihId);
+           ResultSet rs = stmt.executeQuery();
+           while (rs.next()) {
+               System.out.println("MitgliedId: " + rs.getInt("mitgliedId")
+                                + ", Anzahl: " + rs.getInt("anzahl"));
+           }
+       } catch (SQLException e) {
+           e.printStackTrace();
+       }
+   }
+
+   public static void addUnion(Connection conn) {
+       String sql = "SELECT name FROM Mitglieder "
+                  + "UNION "
+                  + "SELECT titel AS name FROM Buecher "
+                  + "ORDER BY name";
+       try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+           ResultSet rs = stmt.executeQuery();
+           while (rs.next()) {
+               System.out.println("Name: " + rs.getString("name"));
+           }
+       } catch (SQLException e) {
+           e.printStackTrace();
+       }
+   }
+
+   public static void addWith(Connection conn) {
+       String sql = "WITH aktiv AS ( "
+                  + "SELECT mitgliedId, buchId "
+                  + "FROM Ausleihe "
+                  + "WHERE rueckgabeDatum IS NULL "
+                  + ") "
+                  + "SELECT mitgliedId, buchId "
+                  + "FROM aktiv "
+                  + "ORDER BY mitgliedId ASC";
+       try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+           ResultSet rs = stmt.executeQuery();
+           while (rs.next()) {
+               System.out.println("MitgliedId: " + rs.getInt("mitgliedId")
+                                + ", BuchId: " + rs.getInt("buchId"));
+           }
+       } catch (SQLException e) {
+           e.printStackTrace();
+       }
+   }
+
+   public static void addSubquerry(Connection conn) {
+       String sql = "SELECT mitgliedId, COUNT(*) AS anzahl "
+                  + "FROM Ausleihe "
+                  + "GROUP BY mitgliedId "
+                  + "HAVING COUNT(*) > ( "
+                  + "  SELECT AVG(ausleihenProMitglied) "
+                  + "  FROM ( "
+                  + "    SELECT COUNT(*) AS ausleihenProMitglied "
+                  + "    FROM Ausleihe "
+                  + "    GROUP BY mitgliedId "
+                  + "  ) AS durchschnitt "
+                  + ")";
+       try (PreparedStatement stmt = conn.prepareStatement(sql)) {
+           ResultSet rs = stmt.executeQuery();
+           while (rs.next()) {
+               System.out.println("MitgliedId: " + rs.getInt("mitgliedId")
+                                + ", Anzahl: " + rs.getInt("anzahl"));
+           }
+       } catch (SQLException e) {
+           e.printStackTrace();
+       }
+   }
+
+   public static void setupDatabase(Connection conn) {
+       try (Statement stmt = conn.createStatement()) {
+           stmt.execute("CREATE TABLE IF NOT EXISTS Buecher ("
+                      + "id INT AUTO_INCREMENT PRIMARY KEY,"
+                      + "titel VARCHAR(100))");
+           stmt.execute("CREATE TABLE IF NOT EXISTS Mitglieder ("
+                      + "id INT AUTO_INCREMENT PRIMARY KEY,"
+                      + "name VARCHAR(100))");
+           stmt.execute("CREATE TABLE IF NOT EXISTS Ausleihe ("
+                      + "id INT AUTO_INCREMENT PRIMARY KEY,"
+                      + "buchId INT,"
+                      + "mitgliedId INT,"
+                      + "ausleihDatum DATE,"
+                      + "rueckgabeDatum DATE,"
+                      + "FOREIGN KEY (buchId) REFERENCES Buecher(id),"
+                      + "FOREIGN KEY (mitgliedId) REFERENCES Mitglieder(id))");
+       } catch (SQLException e) {
+           e.printStackTrace();
+       }
+   }
+}
