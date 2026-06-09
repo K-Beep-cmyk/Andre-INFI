@@ -14,7 +14,7 @@ public class Flugzeug {
     @DatabaseField(canBeNull = false)
     private int maxSitzplaetze;
 
-    public Flugzeug() {}
+    public Flugzeug() {}  // gleiche wie bei Stadt
 
     public Flugzeug(String modell, int maxSitzplaetze) {
         this.modell = modell;

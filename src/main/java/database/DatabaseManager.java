@@ -17,12 +17,13 @@ public class DatabaseManager {
 
     private static final String DATABASE_URL = "jdbc:mysql://localhost:3306/airline_db";
     private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "";
+    private static final String DB_PASSWORD = "123456789";
 
     private static ConnectionSource connectionSource;
 
-
-    public static Dao<Stadt, Integer> stadtDao;
+    // ein DAO übernimmt das Speichern;Lesen; Updaten und Löschen von deN Objekten in der Datenbank,
+    // ohne eigene SQL Befehle
+    public static Dao<Stadt, Integer> stadtDao; // DAO für die Tabelle Stadt wird erstellt PK ist Integer
     public static Dao<Flugzeug, Integer> flugzeugDao;
     public static Dao<Kunde, Integer> kundeDao;
     public static Dao<Flug, Integer> flugDao;
@@ -40,8 +41,8 @@ public class DatabaseManager {
             TableUtils.createTableIfNotExists(connectionSource, Flug.class);
             TableUtils.createTableIfNotExists(connectionSource, Ticket.class);
 
-            // DAOs initialisieren
-            stadtDao = DaoManager.createDao(connectionSource, Stadt.class);
+
+            stadtDao = DaoManager.createDao(connectionSource, Stadt.class); // baut das Dao auf und verknüpf mit DB
             flugzeugDao = DaoManager.createDao(connectionSource, Flugzeug.class);
             kundeDao = DaoManager.createDao(connectionSource, Kunde.class);
             flugDao = DaoManager.createDao(connectionSource, Flug.class);

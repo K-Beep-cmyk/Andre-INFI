@@ -17,7 +17,7 @@ public class Kunde {
     @DatabaseField(canBeNull = false)
     private int alter;
 
-    public Kunde() {}
+    public Kunde() {} // gleiche wie bei Stadt
 
     public Kunde(String vorname, String nachname, int alter) {
         this.vorname = vorname;

@@ -34,7 +34,7 @@ public class Ticket {
     @DatabaseField(canBeNull = false)
     private String status;
 
-    public Ticket() {}
+    public Ticket() {}  // gleiche wie bei Stadt
 
     public Ticket(Kunde kunde, Flug flug, String sitzplatz, String klasse, double preis, LocalDateTime kaufdatum, String status) {
         this.kunde = kunde;

@@ -8,10 +8,11 @@ public class Main {
 
     public static void main(String[] args) {
         com.j256.ormlite.logger.Logger.setGlobalLogLevel(com.j256.ormlite.logger.Level.ERROR);
-        System.out.println("Initialisiere System...");
+
         DatabaseManager.setupDatabase();
 
-        ladeTestdaten();
+        // Hier werden die Testdaten aufgerufen
+        TestdatenLoader.lade();
 
         boolean running = true;
 
@@ -78,29 +79,6 @@ public class Main {
         }
     }
 
-    private static void ladeTestdaten() {
-        try {
-            if (database.DatabaseManager.stadtDao.countOf() == 0) {
-                System.out.println("Lade Testdaten in die Datenbank...");
-
-                models.Stadt fra = new models.Stadt("Frankfurt", "Deutschland");
-                models.Stadt bud = new models.Stadt("Budapest", "Ungarn");
-                database.DatabaseManager.stadtDao.create(fra);
-                database.DatabaseManager.stadtDao.create(bud);
-
-                models.Flugzeug airbus = new models.Flugzeug("Boeing 737", 8);
-                database.DatabaseManager.flugzeugDao.create(airbus);
-
-                models.Flug flug1 = new models.Flug(fra, bud, airbus, java.time.LocalDateTime.now().plusDays(5));
-                database.DatabaseManager.flugDao.create(flug1);
-
-                System.out.println("Testdaten erfolgreich angelegt!");
-            }
-        } catch (Exception e) {
-            System.out.println("Fehler beim Anlegen der Testdaten.");
-        }
-    }
-
     private static void kundeRegistrieren() {
         System.out.println("\n--- NEUER KUNDE ---");
         try {
@@ -112,9 +90,9 @@ public class Main {
 
             System.out.print("Alter: ");
             int alter = Integer.parseInt(scanner.nextLine());
-
+            // hier wird ein Kunde nur im Code bisher erstellt und nicht im DB
             models.Kunde neuerKunde = new models.Kunde(vorname, nachname, alter);
-
+            // Übergabe von fertigem Objekt und Dao übergibt es an die DB und speichert es in neuer Zeile
             database.DatabaseManager.kundeDao.create(neuerKunde);
 
             System.out.println("Passt: Kunde " + vorname + " " + nachname + " wurde im System registriert!");
@@ -130,8 +108,10 @@ public class Main {
     private static void ticketBuchen() {
         System.out.println("\n--- TICKET BUCHEN ---");
         try {
-            System.out.print("Bitte gib deine Kunden-ID ein: ");
+            System.out.print("KundenId eingeben: ");
             int kundenId = Integer.parseInt(scanner.nextLine());
+            // Dao sucht nach ID in DB findet es den Kunden baut es ein Objekt und
+            // wenn nichts gefunden wird wird die Variable 'kunde' auf Null gesetzt
             models.Kunde kunde = database.DatabaseManager.kundeDao.queryForId(kundenId);
 
             if (kunde == null) {
@@ -153,7 +133,9 @@ public class Main {
                 System.out.println("Fehler: Dieser Flug liegt in der Vergangenheit und kann nicht gebucht werden.");
                 return;
             }
-
+            // Anstatt alle abertausenden Tickets aus der Datenbank in den Arbeitsspeicher zu laden,
+            // bauen wir hier eine dynamische Abfrage. Die Datenbank übernimmt die Filterarbeit
+            // und gibt uns als Liste exakt nur die Tickets zurück, die zur gewählten Flug-ID passen.
             java.util.List<models.Ticket> flugTickets = database.DatabaseManager.ticketDao.queryBuilder()
                     .where()
                     .eq("flug_id", flug.getId())
@@ -175,10 +157,23 @@ public class Main {
                 return;
             }
 
+
             System.out.print("Wähle die Klasse (1 = Economy, 2 = Business): ");
             String klasseWahl = scanner.nextLine();
-            String klasseName = klasseWahl.equals("2") ? "Business" : "Economy";
-            double preis = klasseWahl.equals("2") ? 250.00 : 99.99;
+
+            String klasseName;
+            double preis;
+
+
+            if (klasseWahl.equals("2")) {
+                klasseName = "Business";
+                preis = 250.00;
+            }
+
+            else {
+                klasseName = "Economy";
+                preis = 99.99;
+            }
 
             models.Ticket neuesTicket = new models.Ticket(
                     kunde,
@@ -217,7 +212,8 @@ public class Main {
                 System.out.println("Dieses Ticket ist bereits storniert!");
                 return;
             }
-
+            // Es wird die Java-Methode minusHours, um vollautomatisch
+            // den exakten Zeitpunkt der Storno-Deadline zu berechnen.
             java.time.LocalDateTime abflug = ticket.getFlug().getAbflugzeit();
             java.time.LocalDateTime spaetesteStornoZeit = abflug.minusHours(24);
 
@@ -227,6 +223,7 @@ public class Main {
             }
 
             ticket.setStatus("storniert");
+            // wird auf die Sekunde genau getracket und die Historie bleibt in der DB
             ticket.setStornierungsdatum(java.time.LocalDateTime.now());
 
             database.DatabaseManager.ticketDao.update(ticket);
