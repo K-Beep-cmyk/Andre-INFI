@@ -7,6 +7,7 @@ public class Main {
     private static final Scanner scanner = new Scanner(System.in);
 
     public static void main(String[] args) {
+        // dafür da damit man die Fehler weg tun kann
         com.j256.ormlite.logger.Logger.setGlobalLogLevel(com.j256.ormlite.logger.Level.ERROR);
 
         DatabaseManager.setupDatabase();
@@ -17,13 +18,12 @@ public class Main {
         boolean running = true;
 
         while (running) {
-            System.out.println("\n=======================================");
-            System.out.println("GUTE in Frankfurt");
-            System.out.println("=======================================");
+            System.out.println("Flug Abfertigung");
             System.out.println("1. Verfügbare Flüge anzeigen");
             System.out.println("2. Als Kunde registrieren");
             System.out.println("3. Ticket buchen");
             System.out.println("4. Ticket stornieren");
+            System.out.println("5. Ticket anzeigen");
             System.out.println("0. Beenden");
             System.out.print("\nBitte wähle eine Option: ");
 
@@ -42,12 +42,15 @@ public class Main {
                 case "4":
                     ticketStornieren();
                     break;
+                case "5":
+                    ticketAnzeigen();
+                    break;
                 case "0":
                     System.out.println("Vielen Dank für die Nutzung des Systems. Auf Wiedersehen!");
                     running = false;
                     break;
                 default:
-                    System.out.println("Ungültige Eingabe! Bitte wähle eine Zahl von 0 bis 4.");
+                    System.out.println("Ungültige Eingabe! Bitte wähle eine Zahl von 0 bis 5.");
             }
         }
 
@@ -56,7 +59,7 @@ public class Main {
     }
 
     private static void fluegeAnzeigen() {
-        System.out.println("\n--- VERFÜGBARE FLÜGE ---");
+        System.out.println("\n verfügbare Flüge");
         try {
             java.util.List<models.Flug> fluege = database.DatabaseManager.flugDao.queryForAll();
 
@@ -64,10 +67,12 @@ public class Main {
                 System.out.println("Noch keine Flüge im System hinterlegt.");
             } else {
                 for (models.Flug flug : fluege) {
-                    System.out.printf("Flug [%d] | %s -> %s | Abflug: %s | Flugzeug: %s (Kapazität: %d)%n",
+                    System.out.printf("Flug [%d] | %s (%s) -> %s (%s) | Abflug: %s | Flugzeug: %s (Kapazität: %d)%n",
                             flug.getId(),
                             flug.getStartStadt().getName(),
+                            flug.getStartStadt().getIcaoCode(),
                             flug.getZielStadt().getName(),
+                            flug.getZielStadt().getIcaoCode(),
                             flug.getAbflugzeit().toString(),
                             flug.getFlugzeug().getModell(),
                             flug.getFlugzeug().getMaxSitzplaetze()
@@ -80,7 +85,7 @@ public class Main {
     }
 
     private static void kundeRegistrieren() {
-        System.out.println("\n--- NEUER KUNDE ---");
+        System.out.println("\n Neuer Kunde ");
         try {
             System.out.print("Vorname: ");
             String vorname = scanner.nextLine();
@@ -106,7 +111,7 @@ public class Main {
     }
 
     private static void ticketBuchen() {
-        System.out.println("\n--- TICKET BUCHEN ---");
+        System.out.println("\n Ticket buchen");
         try {
             System.out.print("KundenId eingeben: ");
             int kundenId = Integer.parseInt(scanner.nextLine());
@@ -196,7 +201,7 @@ public class Main {
     }
 
     private static void ticketStornieren() {
-        System.out.println("\n--- TICKET STORNIEREN ---");
+        System.out.println("\nTickets Storno");
         try {
             System.out.print("Bitte gib die ID des Tickets ein, das du stornieren möchtest: ");
             int ticketId = Integer.parseInt(scanner.nextLine());
@@ -239,7 +244,7 @@ public class Main {
     }
 
     private static void zeigeSitzplan(models.Flug flug, java.util.List<models.Ticket> gebuchteTickets) {
-        System.out.println("\n--- SITZPLAN ---");
+        System.out.println("\nSitzplan");
         int kapazitaet = flug.getFlugzeug().getMaxSitzplaetze();
 
         java.util.List<String> vergebenePlaetze = new java.util.ArrayList<>();
@@ -277,5 +282,31 @@ public class Main {
             System.out.println(reihenAusgabe.toString());
         }
         System.out.println("Legende: [a1] = Frei | [XX] = Belegt");
+    }
+    private static void ticketAnzeigen() {
+        System.out.println("\nTicket anzeigen");
+        try {
+            System.out.print("Bitte gib die Ticket-ID ein: ");
+            int ticketId = Integer.parseInt(scanner.nextLine());
+
+            models.Ticket ticket = database.DatabaseManager.ticketDao.queryForId(ticketId);
+
+            if (ticket == null) {
+                System.out.println("Ticket nicht gefunden!");
+                return;
+            }
+            System.out.printf("TICKET ID: %d | Status: %s%n", ticket.getId(), ticket.getStatus());
+            System.out.printf("Passagier: %s %s%n", ticket.getKunde().getVorname(), ticket.getKunde().getNachname());
+            System.out.printf("Flug: %s -> %s%n", ticket.getFlug().getStartStadt().getName(), ticket.getFlug().getZielStadt().getName());
+            System.out.printf("Sitzplatz: %s | Klasse: %s%n", ticket.getSitzplatz(), ticket.getKlasse());
+            // Hier wird der Preis mit genau 2 Nachkommastellen ausgegeben:
+            System.out.printf("Gesamtpreis: %.2f EUR%n", ticket.getPreis());
+
+
+        } catch (NumberFormatException e) {
+            System.out.println("Eingabefehler: Bitte gib eine gültige Zahl für die ID ein.");
+        } catch (Exception e) {
+            System.out.println("Fehler beim Laden des Tickets: " + e.getMessage());
+        }
     }
 }

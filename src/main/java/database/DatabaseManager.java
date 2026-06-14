@@ -17,7 +17,7 @@ public class DatabaseManager {
 
     private static final String DATABASE_URL = "jdbc:mysql://localhost:3306/airline_db";
     private static final String DB_USER = "root";
-    private static final String DB_PASSWORD = "123456789";
+    private static final String DB_PASSWORD = "Passwort eingeben!!!";
 
     private static ConnectionSource connectionSource;
 

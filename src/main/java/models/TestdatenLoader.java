@@ -12,10 +12,10 @@ public class TestdatenLoader {
                 System.out.println("Lade erweiterte Testdaten in die Datenbank...");
 
                 // --- 1. STÄDTE ERSTELLEN ---
-                models.Stadt fra = new models.Stadt("Frankfurt", "Deutschland");
-                models.Stadt bud = new models.Stadt("Budapest", "Ungarn");
-                models.Stadt vie = new models.Stadt("Wien", "Österreich");
-                models.Stadt par = new models.Stadt("Paris", "Frankreich");
+                models.Stadt fra = new models.Stadt("Frankfurt am Main", "Deutschland", "EDDF");
+                models.Stadt bud = new models.Stadt("Budapest Liszt Ferenc", "Ungarn", "LHBP");
+                models.Stadt vie = new models.Stadt("Wien-Schwechat", "Österreich", "LOWW");
+                models.Stadt par = new models.Stadt("Paris-Charles-de-Gaulle", "Frankreich", "LFPG");
 
                 DatabaseManager.stadtDao.create(fra);
                 DatabaseManager.stadtDao.create(bud);
@@ -23,9 +23,9 @@ public class TestdatenLoader {
                 DatabaseManager.stadtDao.create(par);
 
                 // --- 2. FLUGZEUGE ERSTELLEN ---
-                models.Flugzeug boeingSmall = new models.Flugzeug("Boeing 737", 8);
-                models.Flugzeug airbusLarge = new models.Flugzeug("Airbus A320", 150);
-                models.Flugzeug privatJet = new models.Flugzeug("Cessna Citation", 4);
+                models.Flugzeug boeingSmall = new models.Flugzeug("Boeing 737-8", 162);
+                models.Flugzeug airbusLarge = new models.Flugzeug("Airbus A320-200", 150);
+                models.Flugzeug privatJet = new models.Flugzeug("Airbus A330-300", 260);
 
                 DatabaseManager.flugzeugDao.create(boeingSmall);
                 DatabaseManager.flugzeugDao.create(airbusLarge);

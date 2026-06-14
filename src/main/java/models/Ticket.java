@@ -1,6 +1,5 @@
 package models;
 
-import com.j256.ormlite.field.DataType;
 import com.j256.ormlite.field.DatabaseField;
 import com.j256.ormlite.table.DatabaseTable;
 import java.time.LocalDateTime;
@@ -25,11 +24,11 @@ public class Ticket {
     @DatabaseField(canBeNull = false)
     private double preis;
 
-    @DatabaseField(dataType = DataType.SERIALIZABLE, canBeNull = false)
-    private LocalDateTime kaufdatum;
+    @DatabaseField(canBeNull = false)
+    private String kaufdatum;
 
-    @DatabaseField(dataType = DataType.SERIALIZABLE)
-    private LocalDateTime stornierungsdatum;
+    @DatabaseField
+    private String stornierungsdatum;
 
     @DatabaseField(canBeNull = false)
     private String status;
@@ -42,7 +41,7 @@ public class Ticket {
         this.sitzplatz = sitzplatz;
         this.klasse = klasse;
         this.preis = preis;
-        this.kaufdatum = kaufdatum;
+        this.kaufdatum = kaufdatum.toString();
         this.status = status;
     }
 
@@ -86,14 +85,6 @@ public class Ticket {
         this.klasse = klasse;
     }
 
-    public LocalDateTime getKaufdatum() {
-        return kaufdatum;
-    }
-
-    public void setKaufdatum(LocalDateTime kaufdatum) {
-        this.kaufdatum = kaufdatum;
-    }
-
     public double getPreis() {
         return preis;
     }
@@ -102,12 +93,34 @@ public class Ticket {
         this.preis = preis;
     }
 
+    public LocalDateTime getKaufdatum() {
+        if (this.kaufdatum == null) {
+            return null;
+        }
+        return LocalDateTime.parse(this.kaufdatum);
+    }
+
+    public void setKaufdatum(LocalDateTime kaufdatum) {
+        if (kaufdatum == null) {
+            this.kaufdatum = null;
+        } else {
+            this.kaufdatum = kaufdatum.toString();
+        }
+    }
+
     public LocalDateTime getStornierungsdatum() {
-        return stornierungsdatum;
+        if (this.stornierungsdatum == null) {
+            return null;
+        }
+        return LocalDateTime.parse(this.stornierungsdatum);
     }
 
     public void setStornierungsdatum(LocalDateTime stornierungsdatum) {
-        this.stornierungsdatum = stornierungsdatum;
+        if (stornierungsdatum == null) {
+            this.stornierungsdatum = null;
+        } else {
+            this.stornierungsdatum = stornierungsdatum.toString();
+        }
     }
 
     public String getStatus() {

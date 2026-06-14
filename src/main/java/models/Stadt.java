@@ -14,14 +14,17 @@ public class Stadt {
     @DatabaseField(canBeNull = false)
     private String land;
 
+    @DatabaseField(canBeNull = false)
+    private String icaoCode;
+
     public Stadt() {} // ORMlite braucht einen leeren Konstruktor weil zu erst
                       // dort erst eine Hülle erstellt wird dann werden erst die Werte reingeschrieben
 
-    public Stadt(String name, String land) {
+    public Stadt(String name, String land, String icaoCode) {
         this.name = name;
         this.land = land;
+        this.icaoCode = icaoCode;
     }
-
 
     public int getId() {
         return id;
@@ -45,5 +48,13 @@ public class Stadt {
 
     public void setLand(String land) {
         this.land = land;
+    }
+
+    public String getIcaoCode() {
+        return icaoCode;
+    }
+
+    public void setIcaoCode(String icaoCode) {
+        this.icaoCode = icaoCode;
     }
 }
