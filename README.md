@@ -1,7 +1,7 @@
 Das ist mein README, wenn Sie diese Schritte machen dann wird das Programm laufen.
 
 Voraussetzungen die man am Computer braucht:
-1. JAVA JDK (Version 8 oder später)
+1. JAVA JDK (Version 8 oder später ) ich empfehle Version 17
 2. Eine IDE mit Maven-Unterstützung (ich habe Intellij verwendet)
 
 1. Schritt nach dem Herunterladen:
